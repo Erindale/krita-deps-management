@@ -7,7 +7,6 @@
     "base/expat": "master"
     "base/exiv2": "master"
     "base/fribidi": "master"
-    "heif/libaom": "master"
     "base/fftw3": "master"
     "base/freetype": "master"
     "base/fontconfig": "master"
@@ -21,7 +20,6 @@
     "base/tiff": "master"
     "base/gsl": "master"
     "base/giflib": "master"
-    "base/openjpeg": "master"
     "base/json_c": "master"
     "base/xsimd": "master"
     "base/unibreak": "master"
@@ -30,27 +28,39 @@
     "base/zug": "master"
     "base/immer": "master"
     "base/lager": "master"
-    "base/highway": "master"
     "base/brotli": "master"
-    "base/jpegxl": "master"
     "base/extra_cmake_modules": "master"
     "base/kconfig": "master"
     "base/kcodecs": "master"
-    "base/karchive": "master"
     "base/kwidgetsaddons": "master"
     "base/kcompletion": "master"
     "base/kcoreaddons": "master"
     "base/kguiaddons": "master"
     "base/ki18n": "master"
-    "base/kitemmodels": "master"
     "base/kitemviews": "master"
-    "base/kimageformats": "master"
-    "base/kwindowsystem": "master"
     "base/kcolorscheme": "master"
     "base/mypaint": "master"
+    "base/jpeg": "master"
+    "ffmpeg/ffmpeg": "master"
+
+
+# Not built for iOS yet (personal iPadOS build, see tools/ios-toolchain.cmake):
+# optional importers (JPEG XL, JPEG 2000, HEIF's AV1 codec), SeExpr, ICU
+# (Qt on iOS is built without it), the KDE frameworks Krita does not link,
+# and the audio/video stack except ffmpeg itself, which iOS builds without
+# the external codec libraries.
+- 'on': ['Windows', 'MacOS', 'Linux', 'Android']
+  'require':
+    "heif/libaom": "master"
+    "base/openjpeg": "master"
+    "base/highway": "master"
+    "base/jpegxl": "master"
+    "base/karchive": "master"
+    "base/kitemmodels": "master"
+    "base/kimageformats": "master"
+    "base/kwindowsystem": "master"
     "base/seexpr": "master"
     "base/icu": "master"
-    "base/jpeg": "master"
     "ffmpeg/flac": "master"
     "ffmpeg/libogg": "master"
     "ffmpeg/opus": "master"
@@ -60,8 +70,14 @@
     "ffmpeg/libtheora": "master"
     "ffmpeg/openh264": "master"
     "ffmpeg/lame": "master"
-    "ffmpeg/ffmpeg": "master"
     "base/mlt": "master"
+
+# iOS: zlib and expat come from the SDK (the recipes only install .pc files
+# for them), libintl-lite stands in for gettext's libintl as on Android
+- 'on': ['iOS']
+  'require':
+    "base/zlib": "master"
+    "base/libintl-lite": "master"
 
 # libiconv cannot be cross-compiled for Android as of now. It uses
 # automake, hence it needs some special handling. It means that

@@ -21,6 +21,29 @@ endif()
 
 set(FFMPEG_GIT_SHA1 1834eb471506fe3f6296aa844825ac317e51bd5b)
 
+if (IOS)
+    # iPadOS (personal build): a static library for Krita's in-process
+    # encoder, without the command-line programs and, for now, without the
+    # external codec libraries (aom, vpx, openh264, theora, lame, opus,
+    # vorbis, sdl2), which are not built for iOS yet. FFmpeg's own encoders
+    # (PNG/APNG, GIF, FLAC, AAC) and libwebp remain.
+    set(FFMPEG_LINKAGE_OPTIONS -Ddefault_library=static -Dprograms=disabled
+        -Dffmpeg=disabled -Dffprobe=disabled)
+    set(FFMPEG_EXTERNAL_LIBS -Dsdl2=disabled -Dlibaom=disabled
+        -Dlibaom_av1_encoder=disabled -Dlibvpl=disabled
+        -Dlibvpx=disabled -Dlibvpx_vp9_encoder=disabled -Dlibvpx_vp8_encoder=disabled
+        -Dlibopenh264=disabled -Dlibtheora=disabled
+        -Dlibmp3lame=disabled -Dlibopus=disabled -Dlibvorbis=disabled)
+else()
+    set(FFMPEG_LINKAGE_OPTIONS -Ddefault_library=shared -Dprograms=enabled
+        -Dffmpeg=enabled -Dffprobe=enabled)
+    set(FFMPEG_EXTERNAL_LIBS -Dsdl2=enabled -Dlibaom=enabled
+        -Dlibaom_av1_encoder=enabled -Dlibvpl=auto
+        -Dlibvpx=enabled -Dlibvpx_vp9_encoder=enabled -Dlibvpx_vp8_encoder=enabled
+        -Dlibopenh264=enabled -Dlibtheora=enabled
+        -Dlibmp3lame=enabled -Dlibopus=enabled -Dlibvorbis=enabled)
+endif()
+
 kis_ExternalProject_Add_with_separate_builds_apple(
     ext_ffmpeg
     MESON
@@ -49,12 +72,10 @@ kis_ExternalProject_Add_with_separate_builds_apple(
             ${_stack_guard_flag}
             -Denable-cfguard=disabled # TODO: change to 'auto' when Krita enabled cfguard internally
             -Dbuildtype=$<IF:$<CONFIG:Debug>,debug,debugoptimized>
-            -Ddefault_library=shared
             ${DISABLE_ASM_ON_ANDROID_x86_32}
-            -Dprograms=enabled
             -Dtests=disabled
-            -Dffmpeg=enabled
-            -Dffprobe=enabled
+            ${FFMPEG_LINKAGE_OPTIONS}
+            ${FFMPEG_EXTERNAL_LIBS}
             -Dffplay=disabled
             -Davdevice=disabled
             -Davcodec=enabled
@@ -63,8 +84,6 @@ kis_ExternalProject_Add_with_separate_builds_apple(
             -Dswresample=enabled
             -Dswscale=enabled
             -Dpostproc=disabled
-            -Dsdl2=enabled
-            -Dlibaom=enabled
             -Dzlib=enabled
             -Dimage2_demuxer=enabled
             -Dimage2_alias_pix_demuxer=enabled
@@ -81,19 +100,9 @@ kis_ExternalProject_Add_with_separate_builds_apple(
             -Dapng_encoder=enabled
             -Dapng_decoder=enabled
             # ===================== Video Codecs
-            -Dlibaom_av1_encoder=enabled
-            -Dlibvpl=auto # Intel-specific optimizations
-            -Dlibvpx=enabled
-            -Dlibvpx_vp9_encoder=enabled
-            -Dlibvpx_vp8_encoder=enabled
-            -Dlibopenh264=enabled
-            -Dlibtheora=enabled
             # ===================== Audio Codecs
             -Dflac_encoder=enabled
             -Daac_encoder=enabled
-            -Dlibmp3lame=enabled
-            -Dlibopus=enabled
-            -Dlibvorbis=enabled
             -Dvaapi=disabled
 
             ${EXTRA_MESON_FLAGS}

@@ -1,0 +1,16 @@
+--- a/CMakeLists.txt	2026-11-05 18:59:38
++++ b/CMakeLists.txt	2026-11-05 18:59:38
+@@ -64,7 +64,12 @@
+     getarg.c
+     )
+ 
+-add_library(gif SHARED ${GIFLIB_SOURCES})
++if (IOS)
++    # iOS apps link everything statically
++    add_library(gif STATIC ${GIFLIB_SOURCES})
++else()
++    add_library(gif SHARED ${GIFLIB_SOURCES})
++endif()
+ 
+ if(ANDROID)
+     add_definitions (-DSIZE_MAX=0xffffffff -DS_IREAD=S_IRUSR -DS_IWRITE=S_IWUSR -DS_IEXEC=S_IXUSR)

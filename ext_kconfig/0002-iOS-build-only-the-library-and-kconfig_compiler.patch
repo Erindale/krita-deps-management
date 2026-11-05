@@ -1,0 +1,42 @@
+diff -ru a/src/CMakeLists.txt b/src/CMakeLists.txt
+--- a/src/CMakeLists.txt	2026-11-05 19:45:16
++++ b/src/CMakeLists.txt	2026-11-05 19:45:48
+@@ -6,8 +6,15 @@
+     add_subdirectory(qml)
+ endif()
+ add_subdirectory(kconfig_compiler)
+-add_subdirectory(kconf_update)
+-add_subdirectory(kreadconfig)
++if(IOS)
++    # kconf_update and kreadconfig need QProcess, which iOS lacks, and are
++    # never run in an app. kconfig_compiler stays for the CMake export; it
++    # is a host tool, so it is linked without the UIKit entry point.
++    set_target_properties(kconfig_compiler PROPERTIES qt_no_entrypoint TRUE)
++else()
++    add_subdirectory(kconf_update)
++    add_subdirectory(kreadconfig)
++endif()
+ 
+ ecm_qt_install_logging_categories(
+     EXPORT KCONFIG
+diff -ru a/src/core/CMakeLists.txt b/src/core/CMakeLists.txt
+--- a/src/core/CMakeLists.txt	2026-11-05 19:46:25
++++ b/src/core/CMakeLists.txt	2026-11-05 19:46:25
+@@ -50,9 +50,16 @@
+     EXCLUDE_DEPRECATED_BEFORE_AND_AT ${EXCLUDE_DEPRECATED_BEFORE_AND_AT}
+ )
+ 
++if(IOS)
++    # no kconf_update on iOS (see src/CMakeLists.txt); the define is only
++    # used where QProcess exists
++    set(_kconf_update_file_name kconf_update)
++else()
++    set(_kconf_update_file_name $<TARGET_FILE_NAME:KF6::kconf_update>)
++endif()
+ target_compile_definitions(KF6ConfigCore
+     PRIVATE
+-        KCONF_UPDATE_INSTALL_LOCATION="${KDE_INSTALL_FULL_LIBEXECDIR_KF}/$<TARGET_FILE_NAME:KF6::kconf_update>"
++        KCONF_UPDATE_INSTALL_LOCATION="${KDE_INSTALL_FULL_LIBEXECDIR_KF}/${_kconf_update_file_name}"
+ )
+ 
+ target_include_directories(KF6ConfigCore

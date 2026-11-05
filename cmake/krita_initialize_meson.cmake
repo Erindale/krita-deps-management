@@ -33,7 +33,11 @@ elseif (APPLE)
     set(CROSS_LINKER_FLAGS "-isysroot ${CMAKE_OSX_SYSROOT}")
 endif()
 
-if (ANDROID OR CMAKE_CROSSCOMPILING)
+if (IOS)
+    # CMake does not set a compiler target on iOS; the toolchain computes it
+    set(CROSS_COMPILE_FLAGS "-isysroot ${KRITA_IOS_SDK_PATH} -target ${KRITA_IOS_TARGET_TRIPLE}")
+    set(CROSS_LINKER_FLAGS "${CROSS_COMPILE_FLAGS}")
+elseif (ANDROID OR CMAKE_CROSSCOMPILING)
     set(CROSS_COMPILE_FLAGS "${CROSS_COMPILE_FLAGS} --target=${CMAKE_C_COMPILER_TARGET}")
     set(CROSS_LINKER_FLAGS "${CROSS_EXE_LINKER_FLAGS} --target=${CMAKE_C_COMPILER_TARGET}")
 endif()
@@ -44,7 +48,7 @@ if (ANDROID)
 #    set(CROSS_COMPILE_FLAGS "${CROSS_COMPILE_FLAGS} -D_LIBCPP_HAS_NO_OFF_T_FUNCTIONS")
 endif()
 
-if (CMAKE_OSX_ARCHITECTURES)
+if (CMAKE_OSX_ARCHITECTURES AND NOT IOS)
     foreach(arch ${CMAKE_OSX_ARCHITECTURES})
         string(APPEND CROSS_COMPILE_FLAGS_${arch} "${CROSS_COMPILE_FLAGS} -arch ${arch}")
     endforeach()
@@ -77,6 +81,15 @@ else()
 endif()
 
 string(TOLOWER ${CMAKE_SYSTEM_NAME} _system_name)
+if (IOS)
+    # meson calls every Apple OS "darwin" and tells them apart by subsystem
+    set(_system_name "darwin")
+    if (KDECI_IOS_SDK STREQUAL "iphonesimulator")
+        set(_meson_subsystem "subsystem = 'ios-simulator'")
+    else()
+        set(_meson_subsystem "subsystem = 'ios'")
+    endif()
+endif()
 
 if (ANDROID OR CMAKE_CROSSCOMPILING)
     set(EXTRA_MESON_FLAGS
@@ -92,6 +105,21 @@ else()
 endif()
 
 set(EXTRA_MESON_FLAGS ${EXTRA_MESON_FLAGS} -Dpkgconfig.relocatable=true)
+if (IOS)
+    # iOS apps link everything statically. Some projects (fribidi, ...)
+    # compile generators for the build machine, so give meson the Mac's
+    # compiler as well. The target is explicit because clang otherwise
+    # picks iOS from IPHONEOS_DEPLOYMENT_TARGET in the environment.
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/meson-native-macos.ini
+"[binaries]
+c = ['/usr/bin/cc', '-target', '${CMAKE_HOST_SYSTEM_PROCESSOR}-apple-macos']
+cpp = ['/usr/bin/c++', '-target', '${CMAKE_HOST_SYSTEM_PROCESSOR}-apple-macos']
+objc = ['/usr/bin/cc', '-target', '${CMAKE_HOST_SYSTEM_PROCESSOR}-apple-macos']
+")
+    set(EXTRA_MESON_FLAGS ${EXTRA_MESON_FLAGS}
+        -Ddefault_library=static
+        --native-file=${CMAKE_CURRENT_BINARY_DIR}/meson-native-macos.ini)
+endif()
 
 if (MSVC)
     set(_c_ld "c_ld = ['${CMAKE_LINKER}'] + cross_link_args")
@@ -147,6 +175,13 @@ configure_file(
 # Meson's CPU family is a bit different from what
 # Android SDK exports as CMAKE_SYSTEM_PROCESSOR
 set (MESON_CPU_FAMILY ${CMAKE_SYSTEM_PROCESSOR})
+if (IOS)
+    # CMake leaves CMAKE_SYSTEM_PROCESSOR empty or "arm64" on iOS; meson says aarch64
+    set(MESON_CPU_FAMILY "aarch64")
+    set(MESON_CPU "aarch64")
+else()
+    set(MESON_CPU ${CMAKE_SYSTEM_PROCESSOR})
+endif()
 if (${MESON_CPU_FAMILY} STREQUAL "armv7-a")
     set(MESON_CPU_FAMILY "arm")
 elseif (${MESON_CPU_FAMILY} STREQUAL "i686")

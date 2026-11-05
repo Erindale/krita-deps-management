@@ -1,0 +1,20 @@
+--- a/cmake/TiffConfig.cmake.in	2026-11-05 19:26:55
++++ b/cmake/TiffConfig.cmake.in	2026-11-05 19:26:55
+@@ -1,5 +1,16 @@
+ if(NOT "@BUILD_SHARED_LIBS@")
+-    # TODO: import dependencies
++    # A static libtiff links its dependencies through these targets
++    include(CMakeFindDependencyMacro)
++    find_dependency(ZLIB)
++    find_dependency(JPEG)
++    find_dependency(WebP CONFIG)
++    if(NOT TARGET CMath::CMath)
++        # libm; part of the C library on Apple platforms
++        add_library(CMath::CMath INTERFACE IMPORTED)
++        if(NOT APPLE)
++            set_target_properties(CMath::CMath PROPERTIES INTERFACE_LINK_LIBRARIES m)
++        endif()
++    endif()
+ endif()
+ 
+ function(set_variable_from_rel_or_absolute_path var root rel_or_abs_path)

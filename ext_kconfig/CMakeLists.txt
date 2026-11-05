@@ -9,6 +9,10 @@ ExternalProject_Add(
     URL https://download.kde.org/stable/frameworks/6.25/kconfig-6.25.0.tar.xz
     URL_HASH SHA256=8c675c9d35a866fbf1b564354a589019b429cca949f7ba3ba0adb9f2fa15959c
 
+    # QProcess does not exist on iOS; the guard is a no-op elsewhere
+    PATCH_COMMAND ${PATCH_COMMAND} -p1 -i ${CMAKE_CURRENT_SOURCE_DIR}/0001-Do-not-use-QProcess-where-Qt-has-no-process-support.patch
+          COMMAND ${PATCH_COMMAND} -p1 -i ${CMAKE_CURRENT_SOURCE_DIR}/0002-iOS-build-only-the-library-and-kconfig_compiler.patch
+
     # Dropped patches (might be related to the placement of kritarc config file or service detection):
     # 0001-Patch-kconfig-to-save-the-config-to-AppConfigLocatio.patch
 

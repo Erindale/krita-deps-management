@@ -36,7 +36,8 @@ message (STATUS "Verbose output for external projects (set with -DCMAKE_VERBOSE_
 #    or if MESON given, make use of kis_ExternalProject_Add_meson
 macro(kis_ExternalProject_Add_with_separate_builds_apple)
 
-    if(APPLE OR DEFINED ENV{FAKE_MACOS_ENVIRONMENT})
+    # iOS is APPLE too, but builds one architecture with a cross toolchain
+    if((APPLE AND NOT IOS) OR DEFINED ENV{FAKE_MACOS_ENVIRONMENT})
         kis_ExternalProject_Add_macos(${ARGN})
     else()
         set(options MESON AUTOMAKE)

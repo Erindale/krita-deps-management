@@ -1,0 +1,26 @@
+diff -ru a/src/kmimetypeeditor.cpp b/src/kmimetypeeditor.cpp
+--- a/src/kmimetypeeditor.cpp	2026-11-05 19:47:49
++++ b/src/kmimetypeeditor.cpp	2026-11-05 19:47:49
+@@ -9,7 +9,9 @@
+ #include "kmessagedialog.h"
+ 
+ #include <QObject>
++#if QT_CONFIG(process)
+ #include <QProcess>
++#endif
+ #include <QStandardPaths>
+ 
+ static const char s_keditfiletypeExecutable[] = "keditfiletype";
+@@ -31,7 +33,12 @@
+         return;
+     }
+ 
++#if QT_CONFIG(process)
+     const bool result = QProcess::startDetached(exec, args);
++#else
++    // no QProcess (iOS): report that the editor could not be started
++    const bool result = false;
++#endif
+     if (!result) {
+         auto *dlg =
+             new KMessageDialog(KMessageDialog::Error, QObject::tr("Could not start the \"keditfiletype\" executable, please check your installation."), widget);

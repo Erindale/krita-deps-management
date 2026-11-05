@@ -9,6 +9,9 @@ ExternalProject_Add(
     URL https://download.kde.org/stable/frameworks/6.25/kwidgetsaddons-6.25.0.tar.xz
     URL_HASH SHA256=8a9f9cde4427ffec37a0501d337aadae3de39736674f571ff8a13d17d1e6c938
 
+    # QProcess does not exist on iOS; the guard is a no-op elsewhere
+    PATCH_COMMAND ${PATCH_COMMAND} -p1 -i ${CMAKE_CURRENT_SOURCE_DIR}/0001-Do-not-use-QProcess-where-Qt-has-no-process-support.patch
+
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXTPREFIX} -DCMAKE_BUILD_TYPE=${GLOBAL_BUILD_TYPE} -DBUILD_TESTING=OFF -DBUILD_PYTHON_BINDINGS=OFF ${GLOBAL_PROFILE}
 
     UPDATE_COMMAND ""

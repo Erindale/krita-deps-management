@@ -1,0 +1,16 @@
+--- a/CMakeLists.txt	2026-11-05 19:09:25
++++ b/CMakeLists.txt	2026-11-05 19:09:25
+@@ -61,7 +61,12 @@
+ )
+ 
+ 
+-add_library(mypaint SHARED ${mypaint_SOURCES} ${mypaint_HEADERS})
++if (IOS)
++    # iOS apps link everything statically
++    add_library(mypaint STATIC ${mypaint_SOURCES} ${mypaint_HEADERS})
++else()
++    add_library(mypaint SHARED ${mypaint_SOURCES} ${mypaint_HEADERS})
++endif()
+ target_link_libraries(mypaint PRIVATE ${JSONC_LIBRARIES})
+ if(MSVC)
+     set_property(TARGET mypaint PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS ON)

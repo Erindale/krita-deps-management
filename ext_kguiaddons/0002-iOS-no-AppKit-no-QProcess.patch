@@ -1,0 +1,47 @@
+diff -ru a/src/CMakeLists.txt b/src/CMakeLists.txt
+--- a/src/CMakeLists.txt	2026-11-05 19:49:32
++++ b/src/CMakeLists.txt	2026-11-05 19:49:32
+@@ -71,7 +71,9 @@
+     target_link_libraries(KF6GuiAddons PRIVATE advapi32)
+ endif()
+ 
+-if(APPLE)
++# macOS only: iOS has no AppKit, and kcolorschemewatcher.cpp uses the Qt
++# backend there (it checks Q_OS_MACOS)
++if(APPLE AND NOT IOS)
+     find_library(APPKIT_LIBRARY AppKit)
+     target_sources(KF6GuiAddons PRIVATE colors/kcolorschemewatcher_mac.mm)
+     target_link_libraries(KF6GuiAddons PRIVATE ${APPKIT_LIBRARY})
+diff -ru a/src/util/kurlhandler_p.cpp b/src/util/kurlhandler_p.cpp
+--- a/src/util/kurlhandler_p.cpp	2026-11-05 19:50:03
++++ b/src/util/kurlhandler_p.cpp	2026-11-05 19:50:03
+@@ -12,7 +12,9 @@
+ #include <QDebug>
+ #include <QDesktopServices>
+ #include <QLocale>
++#if QT_CONFIG(process)
+ #include <QProcess>
++#endif
+ #include <QStandardPaths>
+ #include <QUrl>
+ 
+@@ -20,6 +22,11 @@
+ 
+ static bool openWithKHelpCenter(const QUrl &url)
+ {
++#if !QT_CONFIG(process)
++    // no QProcess (iOS): fall back to QDesktopServices
++    Q_UNUSED(url);
++    return false;
++#else
+     const QString helpcenter = QStandardPaths::findExecutable(QString::fromLatin1(s_khelpcenter_exec));
+     if (!helpcenter.isEmpty()) {
+         QUrl u(url);
+@@ -33,6 +40,7 @@
+     }
+ 
+     return false;
++#endif
+ }
+ 
+ KUrlHandler::KUrlHandler(QObject *parent)

@@ -1,0 +1,35 @@
+--- a/src/core/kconfig.cpp	2026-11-05 19:43:42
++++ b/src/core/kconfig.cpp	2026-11-05 19:43:42
+@@ -26,7 +26,9 @@
+ #include <QFile>
+ #include <QLocale>
+ #include <QMutexLocker>
++#if QT_CONFIG(process)
+ #include <QProcess>
++#endif
+ #include <QSet>
+ #include <QThreadStorage>
+ #include <QTimeZone>
+@@ -557,7 +559,9 @@
+     const QString cfg_id = updateFile + QLatin1Char(':') + id;
+     const QStringList ids = cg.readEntry("update_info", QStringList());
+     if (!ids.contains(cfg_id)) {
++#if QT_CONFIG(process)
+         QProcess::execute(QStringLiteral(KCONF_UPDATE_INSTALL_LOCATION), QStringList{QStringLiteral("--check"), updateFile});
++#endif
+         reparseConfiguration();
+     }
+ }
+@@ -989,10 +993,12 @@
+ 
+         // Note: We don't ask the user if we should not ask this question again because we can't save the answer.
+         errorMsg += QCoreApplication::translate("KConfig", "Please contact your system administrator.");
++#if QT_CONFIG(process)
+         QString cmdToExec = QStandardPaths::findExecutable(QStringLiteral("kdialog"));
+         if (!cmdToExec.isEmpty()) {
+             QProcess::execute(cmdToExec, QStringList{QStringLiteral("--title"), QCoreApplication::applicationName(), QStringLiteral("--msgbox"), errorMsg});
+         }
++#endif
+     }
+ 
+     d->configState = allWritable ? ReadWrite : ReadOnly; // update the read/write status

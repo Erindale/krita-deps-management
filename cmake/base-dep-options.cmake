@@ -249,6 +249,34 @@ if (APPLE)
     )
 endif ()
 
+if (IOS)
+    # iPadOS (tools/ios-toolchain.cmake). The APPLE block above applies too;
+    # this adds what a cross build needs: the toolchain file and SDK choice
+    # for every CMake sub-build, static libraries only, and the clang target
+    # and sysroot for autotools builds (which replaces the macOS flags).
+    execute_process(COMMAND xcrun --sdk ${KDECI_IOS_SDK} --show-sdk-path
+        OUTPUT_VARIABLE KRITA_IOS_SDK_PATH OUTPUT_STRIP_TRAILING_WHITESPACE)
+    message(STATUS "iOS SDK: ${KDECI_IOS_SDK} (${KRITA_IOS_SDK_PATH}), target ${KRITA_IOS_TARGET_TRIPLE}")
+
+    set(GLOBAL_PROFILE ${GLOBAL_PROFILE}
+                        -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
+                        -DKDECI_IOS_SDK=${KDECI_IOS_SDK}
+                        -DIPHONEOS_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
+                        -DBUILD_SHARED_LIBS=OFF
+                        # the KDE frameworks' metainfo does not list iOS
+                        -DKF_IGNORE_PLATFORM_CHECK=ON
+    )
+
+    set(IOS_AUTOMAKE_FLAGS "-target ${KRITA_IOS_TARGET_TRIPLE} -isysroot ${KRITA_IOS_SDK_PATH}")
+    set(GLOBAL_AUTOMAKE_PROFILE
+        --host=aarch64-apple-darwin
+        --enable-static --disable-shared
+        "CFLAGS=${IOS_AUTOMAKE_FLAGS}"
+        "CXXFLAGS=${IOS_AUTOMAKE_FLAGS}"
+        "LDFLAGS=${IOS_AUTOMAKE_FLAGS}"
+    )
+endif ()
+
 if (ANDROID)
   # Increase the stack size to match MinGW's. Prevents crashes with GMic.
   set(SECURITY_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-z,stack-size=4194304")

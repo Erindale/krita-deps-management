@@ -7,6 +7,15 @@ cmake_minimum_required(VERSION 3.29)
 project(ext_gsl)
 include(${CMAKE_SOURCE_DIR}/../cmake/base-dep-options.cmake)
 
+if (IOS)
+    # Static, and the configure-time run checks (IEEE comparisons and
+    # denormals, long double stdio) cannot run on the target. They all pass
+    # on arm64; Android assumes the same.
+    set(GSL_LIB_ARGS -DBUILD_SHARED_LIBS=OFF -DRUN_RESULT=0 -DRUN_RESULT__TRYRUN_OUTPUT=)
+else()
+    set(GSL_LIB_ARGS -DBUILD_SHARED_LIBS=ON)
+endif()
+
 if (UNIX)
 ExternalProject_Add( ext_gsl
 
@@ -17,7 +26,7 @@ ExternalProject_Add( ext_gsl
 
     PATCH_COMMAND ${PATCH_COMMAND} -p1 -i ${CMAKE_CURRENT_SOURCE_DIR}/gsl-2.3_clang12.patch
     INSTALL_DIR ${EXTPREFIX}
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXTPREFIX} -DCMAKE_BUILD_TYPE=${GLOBAL_BUILD_TYPE} ${GLOBAL_PROFILE} -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=OFF -DNO_AMPL_BINDINGS=ON
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXTPREFIX} -DCMAKE_BUILD_TYPE=${GLOBAL_BUILD_TYPE} ${GLOBAL_PROFILE} ${GSL_LIB_ARGS} -DBUILD_TESTING=OFF -DNO_AMPL_BINDINGS=ON
     UPDATE_COMMAND ""
 )
 else()
