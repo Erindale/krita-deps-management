@@ -386,6 +386,13 @@ elseif (IOS)
         GIT_PROGRESS true
         GIT_REMOTE_UPDATE_STRATEGY REBASE
 
+        # The fork's frame-rate compression dereferences the backing store's
+        # QRhi, which is null when it could not be created
+        PATCH_COMMAND ${PATCH_COMMAND} -d qtbase -p1 -i ${CMAKE_CURRENT_SOURCE_DIR}/0001-Frame-compression-do-not-dereference-a-null-QRhi.patch
+        # Qt's iOS GL context disabled rendering for good when an app used GL
+        # before the event loop started (Krita probes GL in main())
+              COMMAND ${PATCH_COMMAND} -d qtbase -p1 -i ${CMAKE_CURRENT_SOURCE_DIR}/0002-iOS-re-enable-GL-once-the-application-is-no-longer-suspended.patch
+
         # unset QMAKEFEATURES to allow incremental builds with run-ci-build.py
         CONFIGURE_COMMAND ${CMAKE_COMMAND} -E env --unset=QMAKEFEATURES
             <SOURCE_DIR>/configure ${IOS_QT_CONFIGURE_OPS}

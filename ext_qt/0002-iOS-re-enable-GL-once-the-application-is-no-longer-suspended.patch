@@ -1,0 +1,19 @@
+--- a/src/plugins/platforms/ios/qioscontext.mm	2026-11-05 21:17:54
++++ b/src/plugins/platforms/ios/qioscontext.mm	2026-11-05 21:17:54
+@@ -302,6 +302,16 @@
+             }
+         );
+     });
++
++    // The flag above is initialized on the first call. If that call comes
++    // before the event loop runs (an app probing GL in main()), the
++    // application state still reads Suspended although UIKit has already
++    // moved on, and the transitions that would clear the flag were emitted
++    // before the connections existed, so rendering stayed disabled for good.
++    if (applicationBackgrounded && QGuiApplication::applicationState() != Qt::ApplicationSuspended) {
++        qCDebug(lcQpaGLContext) << "app no longer backgrounded, rendering enabled";
++        applicationBackgrounded = false;
++    }
+ 
+     if (applicationBackgrounded)
+         qCWarning(lcQpaGLContext, "OpenGL ES calls are not allowed while an application is backgrounded");

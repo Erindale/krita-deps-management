@@ -1,0 +1,22 @@
+--- a/src/widgets/kernel/qwidgetrepaintmanager.cpp	2026-11-05 21:09:45
++++ b/src/widgets/kernel/qwidgetrepaintmanager.cpp	2026-11-05 21:09:45
+@@ -480,12 +480,16 @@
+             }
+ 
+             const bool shouldCompress = [&] () {
+-                if (frameCompressionMode == 2) {
++                // The QRhi is null when it could not be created, e.g. on iOS
++                // while the application is not active yet (GLES calls are
++                // refused then): never compress in that case.
++                QRhi *rhi = store->handle()->rhi(window);
++                if (!rhi || frameCompressionMode == 2) {
+                     return false;
+                 } else if (frameCompressionMode == 1) {
+-                    return !store->handle()->rhi(window)->isLastFrameCompletedOnGPU();
++                    return !rhi->isLastFrameCompletedOnGPU();
+                 } else {
+-                    return !store->handle()->rhi(window)->isOneButLastFrameCompletedOnGPU();
++                    return !rhi->isOneButLastFrameCompletedOnGPU();
+                 }
+             }();
+ 
