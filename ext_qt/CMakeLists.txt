@@ -392,6 +392,8 @@ elseif (IOS)
         # Qt's iOS GL context disabled rendering for good when an app used GL
         # before the event loop started (Krita probes GL in main())
               COMMAND ${PATCH_COMMAND} -d qtbase -p1 -i ${CMAKE_CURRENT_SOURCE_DIR}/0002-iOS-re-enable-GL-once-the-application-is-no-longer-suspended.patch
+        # Apple Pencil Pro barrel roll reaches QTabletEvent::rotation()
+              COMMAND ${PATCH_COMMAND} -d qtbase -p1 -i ${CMAKE_CURRENT_SOURCE_DIR}/0003-iOS-pass-Apple-Pencil-Pro-barrel-roll-as-tablet-rotation.patch
 
         # unset QMAKEFEATURES to allow incremental builds with run-ci-build.py
         CONFIGURE_COMMAND ${CMAKE_COMMAND} -E env --unset=QMAKEFEATURES

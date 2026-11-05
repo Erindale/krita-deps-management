@@ -1,0 +1,79 @@
+diff -ru a/src/plugins/platforms/ios/qiosintegration.mm b/src/plugins/platforms/ios/qiosintegration.mm
+--- a/src/plugins/platforms/ios/qiosintegration.mm	2026-11-05 23:38:59
++++ b/src/plugins/platforms/ios/qiosintegration.mm	2026-11-05 23:38:59
+@@ -94,7 +94,8 @@
+     m_pencilDevice = new QPointingDevice(
+             "Apple Pencil", 0, QInputDevice::DeviceType::Stylus, QPointingDevice::PointerType::Pen,
+             QInputDevice::Capability::Position | QInputDevice::Capability::Pressure
+-                    | QInputDevice::Capability::XTilt | QInputDevice::Capability::YTilt,
++                    | QInputDevice::Capability::XTilt | QInputDevice::Capability::YTilt
++                    | QInputDevice::Capability::Rotation,
+             1, 0);
+     QWindowSystemInterface::registerInputDevice(m_pencilDevice);
+ #endif
+diff -ru a/src/plugins/platforms/ios/quiview.mm b/src/plugins/platforms/ios/quiview.mm
+--- a/src/plugins/platforms/ios/quiview.mm	2026-11-05 23:38:59
++++ b/src/plugins/platforms/ios/quiview.mm	2026-11-05 23:38:59
+@@ -376,6 +376,7 @@
+ - (void)handlePencilEventForLocationInView:(CGPoint)locationInView withState:(QEventPoint::State)state withTimestamp:(ulong)timeStamp
+     withForce:(CGFloat)force withMaximumPossibleForce:(CGFloat)maximumPossibleForce withZOffset:(CGFloat)zOffset
+     withAzimuthUnitVector:(CGVector)azimuth withAltitudeAngleRadian:(CGFloat)altitudeAngleRadian
++    withRollAngleRadian:(CGFloat)rollAngleRadian
+ {
+     QIOSIntegration *iosIntegration = QIOSIntegration::instance();
+ 
+@@ -392,6 +393,13 @@
+     qreal altitudeAngle = 90 - qRadiansToDegrees(altitudeAngleRadian);
+     qreal xTilt = qBound(-60.0, altitudeAngle * azimuth.dx, 60.0);
+     qreal yTilt = qBound(-60.0, altitudeAngle * azimuth.dy, 60.0);
++    // barrel roll of Apple Pencil Pro (iOS 17.5+; 0 for other pencils),
++    // in degrees in [-180, 180] as QTabletEvent::rotation() expects
++    qreal rotation = qRadiansToDegrees(rollAngleRadian);
++    while (rotation > 180.0)
++        rotation -= 360.0;
++    while (rotation < -180.0)
++        rotation += 360.0;
+ 
+     qCDebug(lcQpaTablet) << ":" << timeStamp << localViewPosition << pressure << state << "azimuth" << azimuth.dx << azimuth.dy
+                 << "altitude" << altitudeAngleRadian << "xTilt" << xTilt << "yTilt" << yTilt;
+@@ -401,7 +409,7 @@
+             // buttons
+             state == QEventPoint::State::Released ? Qt::NoButton : Qt::LeftButton,
+             // pressure, xTilt, yTilt, tangentialPressure, rotation, z, modifiers
+-            pressure, xTilt, yTilt, 0, 0, zOffset, Qt::NoModifier);
++            pressure, xTilt, yTilt, 0, rotation, zOffset, Qt::NoModifier);
+ }
+ #endif
+ 
+@@ -414,10 +422,14 @@
+     if (m_activePencilTouch && [touches containsObject:m_activePencilTouch]) {
+         NSArray<UITouch *> *cTouches = [event coalescedTouchesForTouch:m_activePencilTouch];
+         for (UITouch *cTouch in cTouches) {
++            CGFloat rollAngleRadian = 0;
++            if (@available(ios 17.5, *))
++                rollAngleRadian = cTouch.rollAngle;
+             [self handlePencilEventForLocationInView:[cTouch preciseLocationInView:self] withState:state withTimestamp:timeStamp
+                 withForce:cTouch.force withMaximumPossibleForce:cTouch.maximumPossibleForce withZOffset:0
+                 withAzimuthUnitVector:[cTouch azimuthUnitVectorInView:self]
+-                withAltitudeAngleRadian:cTouch.altitudeAngle];
++                withAltitudeAngleRadian:cTouch.altitudeAngle
++                withRollAngleRadian:rollAngleRadian];
+         }
+     }
+ #endif
+@@ -842,9 +854,14 @@
+         altitudeAngleRadian = recognizer.altitudeAngle;
+     }
+ 
++    CGFloat rollAngleRadian = 0;
++    if (@available(ios 17.5, *))
++        rollAngleRadian = recognizer.rollAngle;
++
+     [self handlePencilEventForLocationInView:[recognizer locationInView:self] withState:QEventPoint::State::Released
+         withTimestamp:timeStamp withForce:0 withMaximumPossibleForce:0 withZOffset:zOffset
+-        withAzimuthUnitVector:azimuth withAltitudeAngleRadian:altitudeAngleRadian];
++        withAzimuthUnitVector:azimuth withAltitudeAngleRadian:altitudeAngleRadian
++        withRollAngleRadian:rollAngleRadian];
+ }
+ #endif
+ 
