@@ -27,8 +27,8 @@ diff -ru a/src/plugins/platforms/ios/quiview.mm b/src/plugins/platforms/ios/quiv
      qreal xTilt = qBound(-60.0, altitudeAngle * azimuth.dx, 60.0);
      qreal yTilt = qBound(-60.0, altitudeAngle * azimuth.dy, 60.0);
 +    // barrel roll of Apple Pencil Pro (iOS 17.5+; 0 for other pencils),
-+    // in degrees in [-180, 180] as QTabletEvent::rotation() expects
-+    qreal rotation = qRadiansToDegrees(rollAngleRadian);
++    // in degrees in [-180, 180], clockwise as QTabletEvent::rotation() expects (UIKit counts anticlockwise)
++    qreal rotation = -qRadiansToDegrees(rollAngleRadian);
 +    while (rotation > 180.0)
 +        rotation -= 360.0;
 +    while (rotation < -180.0)
